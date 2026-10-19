@@ -134,7 +134,7 @@ async function main(): Promise<void> {
   let cursor = await getCursor(latest.sequence);
   console.log(`[indexer] starting at ledger ${cursor} (network is at ${latest.sequence})`);
 
-  while (true) {
+  for (;;) {
     let caughtUp = true;
     try {
       const latestNow = await server.getLatestLedger();
