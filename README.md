@@ -85,9 +85,27 @@ npm run dev
 
 Full stack, including the indexer for full storage enumeration and unbounded history:
 
+Copy the local database configuration first, then choose an appropriate password:
+
 ```bash
+cp .env.example .env
+# For non-local development, replace PRISM_DB_PASSWORD in .env
+# with a strong URL-safe value, e.g. using: openssl rand -hex 24
 docker compose up
 ```
+
+The example `PRISM_DB_PASSWORD=prism` is **only for trusted local development**.
+Compose requires this variable and shares it with Postgres, the indexer and
+frontend. Because it is also placed in a database connection URL, use
+URL-safe characters (such as random hex) rather than unescaped reserved URL
+characters. Keep `.env` private; it is ignored by Git.
+
+Postgres now binds to `127.0.0.1:5432` on the **host**, not every network
+interface; other containers still reach it using the service name
+`postgres:5432`. Do not expose the example credentials over a network.
+For an existing database volume, changing `POSTGRES_PASSWORD` alone does
+not rotate its already-created database password; rotate it inside Postgres
+before changing the environment value.
 
 This runs Postgres, the indexer (`indexer/`), and the frontend together — see [Architecture](#architecture) above for what running the indexer actually buys you.
 
