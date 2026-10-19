@@ -70,6 +70,26 @@ describe("decodeXdr / decodeScValXdr (base64 round-trip)", () => {
 });
 
 describe("coerceArgInput", () => {
+  it.each([
+    ["", []],
+    ["0x", []],
+    ["0x00ff", [0, 255]],
+    ["00ff", [0, 255]],
+    ["0XAAFF", [170, 255]],
+    [" 0xAbCd ", [171, 205]],
+  ])("coerces valid Bytes hex input %j without data loss", (input, expected) => {
+    const value = coerceArgInput(input, "Bytes");
+    expect(value.switch().name).toBe("scvBytes");
+    expect([...value.bytes()]).toEqual(expected);
+  });
+
+  it.each(["zz", "ab_cd", "abc", "0x0g", "0x123", "0x zz", "0x0x12"])(
+    "rejects malformed Bytes input %j instead of silently truncating",
+    (input) => {
+      expect(() => coerceArgInput(input, "Bytes")).toThrow(/Bytes expects an even-length hexadecimal string/);
+    }
+  );
+
   it("coerces scalar types to the matching ScVal variant", () => {
     expect(coerceArgInput("42", "U32").switch().name).toBe("scvU32");
     expect(coerceArgInput("42", "I64").switch().name).toBe("scvI64");

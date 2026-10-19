@@ -64,7 +64,14 @@ export function coerceArgInput(
   if (t === "symbol") return nativeToScVal(raw, { type: "symbol" });
   if (t === "string") return nativeToScVal(raw, { type: "string" });
   if (t === "address") return nativeToScVal(raw, { type: "address" });
-  if (t === "bytes") return nativeToScVal(Buffer.from(raw.replace(/^0x/, ""), "hex"), { type: "bytes" });
+  if (t === "bytes") {
+    const hex = raw.trim().replace(/^0x/i, "");
+    // Buffer.from(..., "hex") silently truncates malformed input.
+    if (hex.length % 2 !== 0 || !/^[0-9a-fA-F]*$/.test(hex)) {
+      throw new Error("Bytes expects an even-length hexadecimal string (optionally prefixed with 0x).");
+    }
+    return nativeToScVal(Buffer.from(hex, "hex"), { type: "bytes" });
+  }
   if (t === "void") return xdr.ScVal.scvVoid();
 
   const generic = parseGeneric(specType);
