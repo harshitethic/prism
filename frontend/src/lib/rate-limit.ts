@@ -21,7 +21,7 @@ const buckets = new Map<string, Bucket>();
 setInterval(() => {
   const now = Date.now();
   for (const [key, bucket] of buckets) {
-    if (now > bucket.resetAt) buckets.delete(key);
+    if (now >= bucket.resetAt) buckets.delete(key);
   }
 }, 5 * 60_000).unref?.();
 
@@ -37,7 +37,7 @@ export function rateLimit(req: Request, opts?: { scope?: string; max?: number })
   const now = Date.now();
   const bucket = buckets.get(key);
 
-  if (!bucket || now > bucket.resetAt) {
+  if (!bucket || now >= bucket.resetAt) {
     buckets.set(key, { count: 1, resetAt: now + WINDOW_MS });
     return null;
   }
