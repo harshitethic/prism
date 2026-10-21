@@ -6,17 +6,45 @@ import { useRouter } from "next/navigation";
 interface Props { intervalMs?: number }
 
 /**
- * Periodically re-runs the server components on this route so data stays
- * fresh without a manual reload. There's no push/websocket feed from
- * Horizon or Soroban RPC to subscribe to — this is polling, not a live
- * stream, bounded by the same revalidate window as the underlying fetches.
+ * Periodically re-runs this route's server components while the tab is visible.
+ * Hidden tabs should not poll Horizon/RPC, but returning to the tab should
+ * immediately catch up rather than waiting for the next six-second tick.
  */
 export default function AutoRefresh({ intervalMs = 6000 }: Props) {
   const router = useRouter();
 
   useEffect(() => {
-    const id = setInterval(() => router.refresh(), intervalMs);
-    return () => clearInterval(id);
+    let timer: number | undefined;
+
+    const stop = () => {
+      if (timer !== undefined) {
+        window.clearInterval(timer);
+        timer = undefined;
+      }
+    };
+
+    const start = () => {
+      if (timer === undefined) {
+        timer = window.setInterval(() => router.refresh(), intervalMs);
+      }
+    };
+
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        stop();
+      } else {
+        router.refresh();
+        start();
+      }
+    };
+
+    if (!document.hidden) start();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      stop();
+    };
   }, [router, intervalMs]);
 
   return null;
